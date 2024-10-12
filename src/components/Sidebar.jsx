@@ -1,14 +1,15 @@
 import React from "react";
 import styled from "styled-components";
+import Playlists from "./Playlists";
 
 export default function Sidebar() {
   return (
     <Container>
       <div className="top__links">
         <div className="logo">
-          <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCpYrVsWwufHstOUb2Xmi4Q-EjwAB0jmhl8y071LKMTmZFR5WlSkCXpHafKHqGdTv3YGM&usqp=CAU"
+          {/* <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCpYrVsWwufHstOUb2Xmi4Q-EjwAB0jmhl8y071LKMTmZFR5WlSkCXpHafKHqGdTv3YGM&usqp=CAU"
             alt="Spotify-Clone-Logo"
-          />
+          /> */}
         </div>
         <ul>
           <li>
@@ -22,6 +23,7 @@ export default function Sidebar() {
           </li>
         </ul>
       </div>
+      <Playlists/>
     </Container>
   );
 }
