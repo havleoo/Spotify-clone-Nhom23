@@ -82,12 +82,19 @@ const Container = styled.div`
     grid-template-columns: 15vw 85vw;
     height: 100%;
     width: 100%;
-    background:linear-gradient(transparent, rgba(0 , 0, 0, 1));
+    background: linear-gradient(transparent, rgba(0 , 0, 0, 1));
     background-color: rgb(32, 87, 100);
     .body {
       height: 100%;
       width: 100%;
       overflow: auto;
+      &::-webkit-scrollbar {
+        width: 0.7rem;
+        max-height: 2rem;
+        &-thumb {
+          background-color: rgba(255, 255, 255, 0.6);
+        }
+      }
     }
   }
 `;
