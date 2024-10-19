@@ -8,6 +8,7 @@ export const initialState = {
   playerState: false,
   selectedPlaylist: null,
   selectedPlaylistId: "37i9dQZF1E37jO8SiMT0yN",
+  newPlaylistName: "",
 };
 
 const reducer = (state, action) => {
@@ -47,6 +48,11 @@ const reducer = (state, action) => {
         ...state,
         selectedPlaylistId: action.selectedPlaylistId,
       };
+    case reducerCases.SET_NEW_PLAYLIST_NAME: // Case mới cho tên playlist
+      return {
+        ...state,
+        newPlaylistName: action.newPlaylistName,
+      };  
     default:
       return state;
   }
