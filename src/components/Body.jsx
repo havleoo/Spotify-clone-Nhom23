@@ -42,6 +42,7 @@ export default function Body({ headerBackground }) {
     };
     getInitialPlaylist();
   }, [token, dispatch, selectedPlaylistId]);
+
   const playTrack = async (
     id,
     name,
