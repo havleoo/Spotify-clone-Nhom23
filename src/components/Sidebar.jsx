@@ -7,9 +7,9 @@ export default function Sidebar() {
     <Container>
       <div className="top__links">
         <div className="logo">
-          {/* <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCpYrVsWwufHstOUb2Xmi4Q-EjwAB0jmhl8y071LKMTmZFR5WlSkCXpHafKHqGdTv3YGM&usqp=CAU"
-            alt="Spotify-Clone-Logo"
-          /> */}
+          <img src="https://cdn-icons-png.flaticon.com/512/232/232413.png"
+           alt="Spotify-Clone-Logo"
+          />
         </div>
         <ul>
           <li>
@@ -44,6 +44,8 @@ const Container = styled.div`
       img {
         max-inline-size: 80%
         block-size: auto;
+        height: 200px;
+        
       }
     }
     ul {
