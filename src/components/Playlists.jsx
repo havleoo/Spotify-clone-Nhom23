@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { reducerCases } from "../utils/Constants";
 import { useStateProvider } from "../utils/StateProvider";
 
-export default function Playlists() {
+export default function Playlists({ showCreateInput, onCreateSuccess }) {
   const [{ token, playlists, userInfo, newPlaylistName }, dispatch] = useStateProvider();
 
   useEffect(() => {
@@ -49,6 +49,8 @@ export default function Playlists() {
       playlists: [...playlists, createdPlaylist], // Thêm playlist mới vào danh sách
     });
     dispatch({ type: reducerCases.SET_NEW_PLAYLIST_NAME, newPlaylistName: "" }); // Reset tên sau khi tạo
+
+    onCreateSuccess(); // Ẩn input sau khi tạo playlist thành công
   };
 
   const handlePlaylistNameChange = (e) => {
@@ -58,21 +60,37 @@ export default function Playlists() {
     });
   };
 
-  const changeCurrentPlaylist = (selectedPlaylistId) => {
+  const changeCurrentPlaylist = async (selectedPlaylistId) => {
     dispatch({ type: reducerCases.SET_PLAYLIST_ID, selectedPlaylistId });
+
+    // Gọi API để kiểm tra số lượng bài hát trong playlist
+    const response = await axios.get(
+      `https://api.spotify.com/v1/playlists/${selectedPlaylistId}/tracks`,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (response.data.items.length === 0) {
+      alert("Playlist này rỗng!"); // Hiển thị alert nếu playlist rỗng
+    }
   };
 
   return (
     <Container>
-      <div className="create-playlist">
-        <input
-          type="text"
-          placeholder="Enter playlist name"
-          value={newPlaylistName}
-          onChange={handlePlaylistNameChange} // Gọi hàm thay đổi tên playlist
-        />
-        <button onClick={createPlaylist}>Create Playlist</button>
-      </div>
+      {showCreateInput && (
+        <div className="create-playlist">
+          <input
+            type="text"
+            placeholder="Enter playlist name"
+            value={newPlaylistName}
+            onChange={handlePlaylistNameChange}
+          />
+          <button onClick={createPlaylist}>Create Playlist</button>
+        </div>
+      )}
       <ul>
         {playlists.map(({ name, id }) => {
           return (
