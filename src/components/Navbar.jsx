@@ -11,11 +11,16 @@ export default function Navbar({ navBackground }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [{ token }, dispatch] = useStateProvider();
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  console.log("Current token: ", token);
 
   const fetchSuggestions = async (query) => {
     try {
       const response = await axios.get(
-        `https://api.spotify.com/v1/search?q=${query}&type=track%2Calbum%2Cartist&market=VN&limit=5`,
+        `https://api.spotify.com/v1/search?q=${encodeURIComponent(
+          query
+        )}&type=track%2Calbum%2Cartist&market=VN&limit=5`,
         {
           headers: {
             Authorization: "Bearer " + token,
@@ -24,21 +29,22 @@ export default function Navbar({ navBackground }) {
       );
 
       const items = response.data;
+
       const trackSuggestions = items.tracks.items.map((track) => ({
         id: track.id,
         name: track.name,
         artists: track.artists.map((artist) => artist.name),
-        image: track.album.images[2].url,
+        image: track.album.images[2]?.url || "",
         context_uri: track.album.uri,
         track_number: track.track_number,
         type: "track",
       }));
 
-      const albumSuggestions = items.albums.items.slice(0, 5).map((album) => ({
+      const albumSuggestions = items.albums.items.slice(0, 2).map((album) => ({
         id: album.id,
         name: album.name,
         artists: album.artists.map((artist) => artist.name),
-        image: album.images[2].url,
+        image: album.images[2]?.url || "",
         context_uri: album.uri,
         type: "album",
         external_urls: album.external_urls,
@@ -49,7 +55,7 @@ export default function Navbar({ navBackground }) {
         .map((artist) => ({
           id: artist.id,
           name: artist.name,
-          image: artist.images[2].url,
+          image: artist.images[2]?.url || "",
           type: "artist",
           external_urls: artist.external_urls,
         }));
@@ -59,8 +65,20 @@ export default function Navbar({ navBackground }) {
         ...albumSuggestions,
         ...artistSuggestions,
       ]);
+
+      setErrorMessage(null);
     } catch (error) {
       console.error("Error fetching: ", error);
+
+      if (error.response?.status === 401) {
+        setErrorMessage("Token expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        setErrorMessage(
+          "Authorization failed. Please check your token and permissions."
+        );
+      } else {
+        setErrorMessage("Failed to fetch suggestions. Please try again.");
+      }
     }
   };
 
@@ -118,11 +136,10 @@ export default function Navbar({ navBackground }) {
         <FaSearch />
         <input
           type="text"
-          placeholder="Artists, songs, or podcasts"
+          placeholder="Tracks, albums, or artists"
           value={searchQuery}
           onChange={handleInputChange}
         />
-
         {searchQuery && (
           <ul className="suggestions">
             {suggestions.map((suggestion, index) => (
@@ -152,6 +169,7 @@ export default function Navbar({ navBackground }) {
                     alt={`${suggestion.name} cover`}
                   />
                 )}
+
                 <span>{suggestion.name}</span>
                 <span className="item-type">{suggestion.type}</span>
               </li>
@@ -159,10 +177,11 @@ export default function Navbar({ navBackground }) {
           </ul>
         )}
       </div>
+
       <div className="avatar">
-        <a href="#">
+        <a href={userInfo?.userUrl}>
           <CgProfile />
-          <span>{userInfo?.userName}</span>
+          <span>{userInfo?.name}</span>
         </a>
       </div>
     </Container>
@@ -170,6 +189,8 @@ export default function Navbar({ navBackground }) {
 }
 
 const Container = styled.div`
+  position: relative;
+  z-index: 999;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -180,46 +201,142 @@ const Container = styled.div`
   transition: 0.3s ease-in-out;
   background-color: ${({ navBackground }) =>
     navBackground ? "rgba(0,0,0,0.7)" : "none"};
-  .search__bar {
-    background-color: white;
-    width: 30%;
-    padding: 0.4rem 1rem;
-    border-radius: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    input {
-      border: none;
-      height: 2rem;
-      width: 100%;
-      &:focus {
-        outline: none;
-      }
-    }
-  }
+
   .avatar {
-    background-color: black;
-    padding: 0.3rem 0.4rem;
-    padding-right: 1rem;
+    background-color: #111;
+    padding: 0.5rem 1.2rem;
     border-radius: 2rem;
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: background-color 0.3s ease;
+
     a {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
       text-decoration: none;
-      color: white;
+      color: #fff;
       font-weight: bold;
+
       svg {
-        font-size: 1.3rem;
-        background-color: #282828;
-        padding: 0.2rem;
+        font-size: 1.4rem;
+        background-color: #333;
+        padding: 0.4rem;
         border-radius: 1rem;
-        color: #c7c5c5;
+        color: #ccc;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      &:hover svg {
+        background-color: #282828;
+        color: #fff;
       }
     }
   }
+    
+.search__bar {
+    position: relative;
+    background-color: white;
+    width: 40%;
+    padding: 0.5rem 1.2rem;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.search__bar input {
+    border: none;
+    height: 2rem;
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.1rem 0.5rem;
+    color: #333;
+    border-radius: 2rem;
+    background: #f8f8f8;
+}
+
+.search__bar input:focus {
+    outline: none;
+    background-color: #fff;
+}
+
+.search__bar:focus-within {
+    box-shadow: 0 0 6px 2px rgba(0, 100, 255, 0.4);
+    transform: scale(1);
+}
+
+.suggestions {
+    position: absolute;
+    top: calc(100% + 1rem); 
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%; /* Matching width of search bar */
+    z-index: 1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.3s ease;
+}
+
+.suggestions li {
+    list-style-type: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.3s ease;
+    border-radius: 8px;
+}
+
+.suggestions li img {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.suggestions li span {
+    color: #333;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+.suggestions li span.item-type {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-left: auto;
+}
+
+.suggestions li:hover {
+    background-color: #f8f8f8;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .search__bar {
+        width: 80%;
+        padding: 0.5rem;
+    }
+
+    .suggestions {
+        width: 80%;
+        left: 10%;
+    }
+}
+
 `;
