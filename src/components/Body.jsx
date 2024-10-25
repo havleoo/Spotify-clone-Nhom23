@@ -2,9 +2,8 @@ import axios from "axios";
 import React, { useEffect } from "react";
 import styled from "styled-components";
 import { useStateProvider } from "../utils/StateProvider";
-import { reducerCases } from "../utils/Constants";
 import { AiFillClockCircle } from "react-icons/ai";
-
+import { reducerCases } from "../utils/Constants";
 export default function Body({ headerBackground }) {
   const [{ token, selectedPlaylist, selectedPlaylistId }, dispatch] =
     useStateProvider();
@@ -42,6 +41,7 @@ export default function Body({ headerBackground }) {
     };
     getInitialPlaylist();
   }, [token, dispatch, selectedPlaylistId]);
+
   const playTrack = async (
     id,
     name,
@@ -50,41 +50,44 @@ export default function Body({ headerBackground }) {
     context_uri,
     track_number
   ) => {
-    const response = await axios.put(
-      `https://api.spotify.com/v1/me/player/play`,
-      {
-        context_uri,
-        offset: {
-          position: track_number - 1,
+    try {
+      const response = await axios.put(
+        `https://api.spotify.com/v1/me/player/play`,
+        {
+          context_uri,
+          offset: { position: track_number - 1 },
+          position_ms: 0,
         },
-        position_ms: 0,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
-        },
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 204) {
+        const currentPlaying = { id, name, artists, image };
+        dispatch({ type: reducerCases.SET_PLAYING, currentPlaying });
+        dispatch({ type: reducerCases.SET_PLAYER_STATE, playerState: true });
+      } else {
+        dispatch({ type: reducerCases.SET_PLAYER_STATE, playerState: true });
       }
-    );
-    if (response.status === 204) {
-      const currentPlaying = {
-        id,
-        name,
-        artists,
-        image,
-      };
-      dispatch({ type: reducerCases.SET_PLAYING, currentPlaying });
-      dispatch({ type: reducerCases.SET_PLAYER_STATE, playerState: true });
-    } else {
-      dispatch({ type: reducerCases.SET_PLAYER_STATE, playerState: true });
+    } catch (error) {
+      if (error.response?.status === 403) {
+        console.error(
+          "Access denied: Make sure you have Spotify Premium and a valid device."
+        );
+      } else {
+        console.error("Error playing track:", error);
+      }
     }
   };
+
   const msToMinutesAndSeconds = (ms) => {
     var minutes = Math.floor(ms / 60000);
     var seconds = ((ms % 60000) / 1000).toFixed(0);
     return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
   };
-
   return (
     <Container headerBackground={headerBackground}>
       {selectedPlaylist && (
