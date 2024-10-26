@@ -1,11 +1,13 @@
 import axios from "axios";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { reducerCases } from "../utils/Constants";
 import { useStateProvider } from "../utils/StateProvider";
 
 export default function Playlists({ showCreateInput, onCreateSuccess }) {
   const [{ token, playlists, userInfo, newPlaylistName }, dispatch] = useStateProvider();
+  const [contextMenu, setContextMenu] = useState(null); // Lưu trữ vị trí của menu ngữ cảnh
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
 
   useEffect(() => {
     const getPlaylistData = async () => {
@@ -63,7 +65,6 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
   const changeCurrentPlaylist = async (selectedPlaylistId) => {
     dispatch({ type: reducerCases.SET_PLAYLIST_ID, selectedPlaylistId });
 
-    // Gọi API để kiểm tra số lượng bài hát trong playlist
     const response = await axios.get(
       `https://api.spotify.com/v1/playlists/${selectedPlaylistId}/tracks`,
       {
@@ -76,6 +77,34 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
     if (response.data.items.length === 0) {
       alert("Playlist này rỗng!"); // Hiển thị alert nếu playlist rỗng
     }
+  };
+
+  const handleRightClick = (event, playlistId) => {
+    event.preventDefault();
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+    });
+    setSelectedPlaylistId(playlistId);
+  };
+
+  const deletePlaylist = async () => {
+    if (selectedPlaylistId) {
+      await axios.delete(
+        `https://api.spotify.com/v1/playlists/${selectedPlaylistId}/followers`,
+        {
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      dispatch({
+        type: reducerCases.SET_PLAYLISTS,
+        playlists: playlists.filter((playlist) => playlist.id !== selectedPlaylistId),
+      });
+    }
+    setContextMenu(null); // Đóng menu ngữ cảnh sau khi xóa
   };
 
   return (
@@ -92,14 +121,25 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
         </div>
       )}
       <ul>
-        {playlists.map(({ name, id }) => {
-          return (
-            <li key={id} onClick={() => changeCurrentPlaylist(id)}>
-              {name}
-            </li>
-          );
-        })}
+        {playlists.map(({ name, id }) => (
+          <li
+            key={id}
+            onClick={() => changeCurrentPlaylist(id)}
+            onContextMenu={(e) => handleRightClick(e, id)}
+          >
+            {name}
+          </li>
+        ))}
       </ul>
+
+      {contextMenu && (
+        <ContextMenu
+          style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
+          onClick={deletePlaylist}
+        >
+          Delete Playlist
+        </ContextMenu>
+      )}
     </Container>
   );
 }
@@ -140,9 +180,8 @@ const Container = styled.div`
     flex-direction: column;
     gap: 1rem;
     padding: 1rem;
-    height: 55vh;
-    max-height: 100%;
-    overflow: auto;
+    max-height: 400px; /* Giới hạn chiều cao của danh sách playlist */
+    overflow-y: auto; /* Bật tính năng cuộn khi danh sách vượt quá chiều cao */
     &::-webkit-scrollbar {
       width: 0.7rem;
       &-thumb {
@@ -156,5 +195,18 @@ const Container = styled.div`
         color: white;
       }
     }
+  }
+`;
+
+const ContextMenu = styled.div`
+  position: absolute;
+  background-color: #333;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  &:hover {
+    background-color: #444;
   }
 `;
