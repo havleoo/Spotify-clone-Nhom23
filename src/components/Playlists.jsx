@@ -1,13 +1,14 @@
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
 import { reducerCases } from "../utils/Constants";
 import { useStateProvider } from "../utils/StateProvider";
 
 export default function Playlists({ showCreateInput, onCreateSuccess }) {
-  const [{ token, playlists, userInfo, newPlaylistName }, dispatch] = useStateProvider();
-  const [contextMenu, setContextMenu] = useState(null); // Lưu trữ vị trí của menu ngữ cảnh
-  const [selectedPlaylistId, setSelectedPlaylistId] = useState(null);
+  const [
+    { token, playlists, userInfo, newPlaylistName, contextMenu, selectedPlaylistId },
+    dispatch,
+  ] = useStateProvider();
 
   useEffect(() => {
     const getPlaylistData = async () => {
@@ -27,12 +28,17 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
       dispatch({ type: reducerCases.SET_PLAYLISTS, playlists });
     };
     getPlaylistData();
+
+    const handleClickOutside = () => dispatch({ type: reducerCases.SET_CONTEXT_MENU, contextMenu: null });
+    document.addEventListener("click", handleClickOutside);
+
+    return () => document.removeEventListener("click", handleClickOutside);
   }, [token, dispatch]);
 
   const createPlaylist = async () => {
-    if (newPlaylistName.trim() === "") return; // Kiểm tra nếu tên trống
+    if (newPlaylistName.trim() === "") return;
     const response = await axios.post(
-      `https://api.spotify.com/v1/users/${userInfo.userId}/playlists`, // Thêm userId vào API
+      `https://api.spotify.com/v1/users/${userInfo.userId}/playlists`,
       {
         name: newPlaylistName,
         description: "New playlist created via Spotify Clone",
@@ -48,25 +54,24 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
     const createdPlaylist = { name: response.data.name, id: response.data.id };
     dispatch({
       type: reducerCases.SET_PLAYLISTS,
-      playlists: [...playlists, createdPlaylist], // Thêm playlist mới vào danh sách
+      playlists: [...playlists, createdPlaylist],
     });
-    dispatch({ type: reducerCases.SET_NEW_PLAYLIST_NAME, newPlaylistName: "" }); // Reset tên sau khi tạo
-
-    onCreateSuccess(); // Ẩn input sau khi tạo playlist thành công
+    dispatch({ type: reducerCases.SET_NEW_PLAYLIST_NAME, newPlaylistName: "" });
+    onCreateSuccess();
   };
 
   const handlePlaylistNameChange = (e) => {
     dispatch({
       type: reducerCases.SET_NEW_PLAYLIST_NAME,
-      newPlaylistName: e.target.value, // Cập nhật tên playlist qua dispatch
+      newPlaylistName: e.target.value,
     });
   };
 
-  const changeCurrentPlaylist = async (selectedPlaylistId) => {
-    dispatch({ type: reducerCases.SET_PLAYLIST_ID, selectedPlaylistId });
+  const changeCurrentPlaylist = async (id) => {
+    dispatch({ type: reducerCases.SET_PLAYLIST_ID, selectedPlaylistId: id });
 
     const response = await axios.get(
-      `https://api.spotify.com/v1/playlists/${selectedPlaylistId}/tracks`,
+      `https://api.spotify.com/v1/playlists/${id}/tracks`,
       {
         headers: {
           Authorization: "Bearer " + token,
@@ -75,17 +80,20 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
       }
     );
     if (response.data.items.length === 0) {
-      alert("Playlist này rỗng!"); // Hiển thị alert nếu playlist rỗng
+      alert("Playlist này rỗng!");
     }
   };
 
-  const handleRightClick = (event, playlistId) => {
+  const handleRightClick = (event, id) => {
     event.preventDefault();
-    setContextMenu({
-      x: event.clientX,
-      y: event.clientY,
+    dispatch({
+      type: reducerCases.SET_CONTEXT_MENU,
+      contextMenu: { x: event.clientX, y: event.clientY },
     });
-    setSelectedPlaylistId(playlistId);
+    dispatch({
+      type: reducerCases.SET_SELECTED_PLAYLIST_ID,
+      selectedPlaylistId: id,
+    });
   };
 
   const deletePlaylist = async () => {
@@ -104,7 +112,7 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
         playlists: playlists.filter((playlist) => playlist.id !== selectedPlaylistId),
       });
     }
-    setContextMenu(null); // Đóng menu ngữ cảnh sau khi xóa
+    dispatch({ type: reducerCases.SET_CONTEXT_MENU, contextMenu: null });
   };
 
   return (
@@ -120,7 +128,7 @@ export default function Playlists({ showCreateInput, onCreateSuccess }) {
           <button onClick={createPlaylist}>Create Playlist</button>
         </div>
       )}
-      <ul>
+      <ul className="playlist-list">
         {playlists.map(({ name, id }) => (
           <li
             key={id}
@@ -174,19 +182,17 @@ const Container = styled.div`
     }
   }
 
-  ul {
+  .playlist-list {
     list-style-type: none;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
     padding: 1rem;
-    max-height: 400px; /* Giới hạn chiều cao của danh sách playlist */
+    max-height: 300px; /* Giới hạn chiều cao của danh sách playlist */
     overflow-y: auto; /* Bật tính năng cuộn khi danh sách vượt quá chiều cao */
     &::-webkit-scrollbar {
       width: 0.7rem;
-      &-thumb {
-        background-color: rgba(255, 255, 255, 0.6);
-      }
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.6);
+      border-radius: 10px;
     }
     li {
       transition: 0.3s ease-in-out;
