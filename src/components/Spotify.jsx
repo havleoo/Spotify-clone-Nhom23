@@ -7,6 +7,7 @@ import { useStateProvider } from "../utils/StateProvider";
 import Body from "./Body";
 
 import { reducerCases } from "../utils/Constants";
+import Footer from "./Footer";
 
 export default function Spotify() {
   const [{ token }, dispatch] = useStateProvider();
@@ -65,6 +66,7 @@ export default function Spotify() {
         </div>
       </div>
       <div className="spotify__footer">
+        <Footer />
       </div>
     </Container>
   );
