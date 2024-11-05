@@ -28,3 +28,12 @@ exports.deletePassword = async (username) => {
         { new: true }
     );
 };
+
+exports.getUser = async (id) => {
+    try {
+        const user = await User.findById(id);
+        return user;
+    } catch (error) {
+        throw new Error(`Unable to retrieve user: ${error.message}`);
+    }
+}
