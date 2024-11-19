@@ -21,21 +21,33 @@ app.use("/api/users", userRoutes);
 app.use(express.static("uploads"))
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, './upload')
+        cb(null, './uploads')
     },
     filename: function (req, file, cb) {
         cb(null, Date.now()+ "-" + file.originalname)
     }
 })
 
-const upload = multer({storage})
+const upload = multer(
+    {
+        storage: storage,
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+              cb(null, true);
+            } else {
+              cb(null, false);
+              return cb(new Error('Only .png, .jpg and .jpeg formats are allowed!'));
+            }
+        },
+    }
+)
 
 app.post('/single', upload.single("image"), async (req, res) => {
     try {
         const { path, filename } = req.file;
-        const image = await Image({path, file})
+        const image = await Image({path, filename})
         await image.save();
-        res.send({"msg": "Image Uploaded"})
+        res.send({"msg": "Image Uploaded", "id": image._id})
     } catch (error){
         res.send({"error": "Unable to upload image"})
     }
