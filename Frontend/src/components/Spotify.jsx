@@ -5,9 +5,10 @@ import Navbar from "./Navbar";
 import axios from "axios";
 import { useStateProvider } from "../utils/StateProvider";
 import Body from "./Body";
-import Footer from "./Footer";
+
 
 import { reducerCases } from "../utils/Constants";
+import Footer from "./Footer";
 
 export default function Spotify() {
   const [{ token }, dispatch] = useStateProvider();
@@ -66,9 +67,8 @@ export default function Spotify() {
         </div>
       </div>
       <div className="spotify__footer">
-        <Footer />
+        <Footer/>
       </div>
-     
     </Container>
   );
 }
@@ -98,5 +98,11 @@ const Container = styled.div`
         }
       }
     }
+    
   }
+  ${'' /* .spotify__footer {
+    height: 100px;
+    width: 100%;
+    background-color: #282828;
+  } */}
 `;
