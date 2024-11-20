@@ -43,12 +43,14 @@ export default function Body({ headerBackground }) {
           album: track.album.name,
           context_uri: track.album.uri,
           track_number: track.track_number,
+          uri: track.uri
         })),
       };
       dispatch({ type: reducerCases.SET_PLAYLIST, selectedPlaylist });
     };
     if (selectedPlaylistId) getInitialPlaylist();
   }, [token, dispatch, selectedPlaylistId]);
+
 
   // Xử lý đóng dropdown khi click ra ngoài
   useEffect(() => {
@@ -224,7 +226,6 @@ const handleRemoveFromPlaylist = async (trackId) => {
   }
 };
 
-
   const msToMinutesAndSeconds = (ms) => {
     var minutes = Math.floor(ms / 60000);
     var seconds = ((ms % 60000) / 1000).toFixed(0);
@@ -277,10 +278,19 @@ const handleRemoveFromPlaylist = async (trackId) => {
                     album,
                     context_uri,
                     track_number,
+                    uri
                   },
                   index
                 ) => (
-                  <div className="row" key={id}>
+                  <div className="row"
+                  key={id}
+                  onClick={() => {// xu li su kien khi bam vao 1 track
+                    const selectedTrack = {id, name, artists, image, duration, album, context_uri, track_number, uri}
+
+                    dispatch({ type: reducerCases.SET_SELECTED_TRACK, selectedTrack }); 
+                  }}
+                    // thong tin 1 track
+                  >
                     <div className="col">
                       <span>{index + 1}</span>
                     </div>
