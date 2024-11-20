@@ -140,7 +140,6 @@ export default function Navbar({ navBackground }) {
     setIsUserInfoOpen((prevShowInfo) => !prevShowInfo);
   };
 
-  console.log("Current token: ", token);
 
   const fetchSuggestions = async (query) => {
     try {
