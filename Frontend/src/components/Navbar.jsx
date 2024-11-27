@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { FaSearch } from "react-icons/fa";
 import { reducerCases } from "../utils/Constants";
@@ -10,6 +10,7 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegEyeSlash } from "react-icons/fa";
 import { IoEyeOutline } from "react-icons/io5";
+import SettingsPopup from "./Settings";
 import axios from "axios";
 
 export default function Navbar({ navBackground }) {
@@ -27,6 +28,14 @@ export default function Navbar({ navBackground }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchBarRef = useRef(null);
+
+  const handleSearchBarClick = (event) => {
+    if (searchBarRef.current && !searchBarRef.current.contains(event.target)) {
+      setShowSuggestions(false); // Hide suggestions
+    }
+  }
 
   const [img, setImg] = useState(null);
   const [imgUrl, setImgUrl] = useState("");
@@ -76,6 +85,17 @@ export default function Navbar({ navBackground }) {
   const handleSaveChanges = async () => {
     try {
       // If oldPassword and newPassword are provided and the oldpassword must be verified, update the password
+
+      if(!newPassword || !oldPassword || !confirmNewPassword){
+        alert("All fields are required")
+        return;
+      }
+
+      if(newPassword !== confirmNewPassword){
+        alert("Passwords do not match. Please try again.");
+        return;
+      }
+
       if (oldPassword && newPassword && oldPassword === user.password) {
         const passwordResponse = await axios.post(
           `http://localhost:3001/api/users/change-password`,
@@ -130,6 +150,12 @@ export default function Navbar({ navBackground }) {
     };
 
     fetchUser();
+
+    document.addEventListener("mousedown", handleSearchBarClick);
+    return () => {
+      document.removeEventListener("mousedown", handleSearchBarClick);
+    };
+
   }, []);
 
   const handleToggle = () => {
@@ -246,15 +272,16 @@ export default function Navbar({ navBackground }) {
 
   return (
     <Container navBackground={navBackground}>
-      <div className="search__bar">
+      <div className="search__bar" ref={searchBarRef}>
         <FaSearch />
         <input
           type="text"
           placeholder="Tracks, albums, or artists"
           value={searchQuery}
           onChange={handleInputChange}
+          onFocus={() => setShowSuggestions(true)}
         />
-        {searchQuery && (
+        {showSuggestions && searchQuery && (
           <ul className="suggestions">
             {suggestions.map((suggestion, index) => (
               <li
@@ -385,9 +412,9 @@ export default function Navbar({ navBackground }) {
                         </div>
                       </div>
 
-                      {isEditing ? (
+                      {isEditing ? (                       
                         <div className="form-container">
-                          <p>Username: {user.username}</p>
+                          <h2>{user.username}</h2>
                           <div className="editable-field">
                             <p>Old Password:</p>
                             <input
@@ -409,6 +436,14 @@ export default function Navbar({ navBackground }) {
                               >
                                 {showPassword ? <FaRegEyeSlash /> : <IoEyeOutline />}
                               </button>
+                          </div>
+                          <div className="editable-field">
+                            <p>Confirm Password:</p>
+                            <input
+                              type={showPassword ? "text" : "password"}
+                              value={confirmNewPassword}
+                              onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            />
                           </div>
                         </div>
                       ) : (
@@ -452,9 +487,15 @@ export default function Navbar({ navBackground }) {
               <PiUserSwitch className="switch-icon" /> Switch User
             </button>
 
-            <button className="settings-button">
-              <IoSettingsOutline className="settings-icon" /> Settings
-            </button>
+            <div>
+              <button className="settings-button" onClick={() => setIsSettingOpen(true)}>
+                <IoSettingsOutline className="settings-icon" /> Settings
+              </button>
+              <SettingsPopup
+                isOpen={isSettingOpen}
+                onClose={() => setIsSettingOpen(false)}
+              />
+            </div>
 
             <button className="logout-button" onClick={handleLogout}>
               <FiLogOut className="logout-icon" /> Logout
