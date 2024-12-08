@@ -371,15 +371,16 @@ export default function Footer() {
               )}
             </div>
           )}
-          {currentPlaying && (
-            <button onClick={handleAddToPlaylistClick} className="add-button">
-              +
-            </button>
-          )}
+
         </div>
       </div>
       <div className="player-controls">
         <PlayerControls />
+        {currentPlaying && (
+            <button onClick={handleAddToPlaylistClick} className="add-button">
+              +
+            </button>
+          )}
       </div>
     </Container>
   );
@@ -402,24 +403,33 @@ const Container = styled.div`
     z-index: 10;
     .button-container {
       position: relative;
-
-      .add-button {
-        background-color: #1db954;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 25px; 
-        height: 25px; 
-        font-size: 1.2rem; 
-        position: absolute;
-        top: 11px; 
-        left: 160px; 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-      }
     }
+  }
+
+  .player-controls {
+    grid-column: span 3;
+    position: relative; /* Ensure absolute elements inside it are positioned correctly */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .add-button {
+    background-color: #1db954;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px; 
+    height: 25px;
+    font-size: 1.5rem;
+    position: fixed; 
+    left: 175px; 
+    bottom: 22px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10; 
   }
 
   .playlist-dropdown {
