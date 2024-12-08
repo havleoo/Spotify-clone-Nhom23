@@ -5,7 +5,6 @@ import { reducerCases } from "../utils/Constants";
 import { CgProfile } from "react-icons/cg";
 import { useStateProvider } from "../utils/StateProvider";
 import { FiLogOut } from "react-icons/fi";
-import { PiUserSwitch } from "react-icons/pi";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegEyeSlash } from "react-icons/fa";
@@ -187,7 +186,7 @@ export default function Navbar({ navBackground }) {
       const response = await axios.get(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent(
           query
-        )}&type=track%2Calbum%2Cartist&market=VN&limit=5`,
+        )}&type=track&market=VN&limit=5`,
         {
           headers: {
             Authorization: "Bearer " + token,
@@ -207,30 +206,8 @@ export default function Navbar({ navBackground }) {
         type: "track",
       }));
 
-      const albumSuggestions = items.albums.items.slice(0, 2).map((album) => ({
-        id: album.id,
-        name: album.name,
-        artists: album.artists.map((artist) => artist.name),
-        image: album.images[2]?.url || "",
-        context_uri: album.uri,
-        type: "album",
-        external_urls: album.external_urls,
-      }));
-
-      const artistSuggestions = items.artists.items
-        .slice(0, 2)
-        .map((artist) => ({
-          id: artist.id,
-          name: artist.name,
-          image: artist.images[2]?.url || "",
-          type: "artist",
-          external_urls: artist.external_urls,
-        }));
-
       setSuggestions([
         ...trackSuggestions,
-        ...albumSuggestions,
-        ...artistSuggestions,
       ]);
     } catch (error) {
       console.error("Error fetching: ", error);
@@ -281,9 +258,6 @@ export default function Navbar({ navBackground }) {
     }
   };
 
-  const openExternalLink = (externalUrl) => {
-    window.open(externalUrl, "_blank"); // Open link in a new tab
-  };
 
   return (
     <Container navBackground={navBackground}>
@@ -291,7 +265,7 @@ export default function Navbar({ navBackground }) {
         <FaSearch />
         <input
           type="text"
-          placeholder="Tracks, albums, or artists"
+          placeholder="Search for a song"
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
@@ -303,12 +277,6 @@ export default function Navbar({ navBackground }) {
               <li
                 key={index}
                 onClick={() => {
-                  if (
-                    suggestion.type === "artist" ||
-                    suggestion.type === "album"
-                  ) {
-                    openExternalLink(suggestion.external_urls.spotify); // Open Spotify link for artist or album
-                  } else {
                     const id = suggestion.id;
                     const name = suggestion.name;
                     const image = suggestion.image;
@@ -330,7 +298,6 @@ export default function Navbar({ navBackground }) {
                       suggestion.context_uri,
                       suggestion.track_number
                     );
-                  }
                 }}
               >
                 {suggestion.image && (
@@ -370,21 +337,20 @@ export default function Navbar({ navBackground }) {
                     ></div>
                   ) : (
                     <div className="circle placeholder">
-                      <span>Chưa có ảnh</span>
+                      <span>No image</span>
                     </div>
                   )}
                 </div>
 
                 <div className="user-text">
-                  <p className="user-profile-name">{userInfo?.name}</p>
-                  <p className="user-profile-url">
+                  <p className="user-profile-name">
                     <a
                       href={userInfo?.userUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="profile-link"
                     >
-                      {userInfo?.userUrl}
+                      {userInfo?.name}
                     </a>
                   </p>
                 </div>
@@ -420,7 +386,7 @@ export default function Navbar({ navBackground }) {
                             ></div>
                           ) : (
                             <div className="circle placeholder">
-                              <span>Chưa có ảnh</span>
+                              <span>No image</span>
                             </div>
                           )}
                         </div>
@@ -510,7 +476,7 @@ export default function Navbar({ navBackground }) {
                           
                         }}
                       >
-                        {isEditing ? "Save Changes" : "Manage Account"}
+                        {isEditing ? "Save Changes" : "Change password"}
                       </button>
                     </div>
                   </div>
@@ -808,7 +774,7 @@ const Container = styled.div`
     opacity: 1;
     padding: 20px;
     border-radius: 12px;
-    width: 400px;
+    width: 500px;
     max-width: 80%;
     height: 500px;
     text-align: left;
@@ -827,7 +793,7 @@ const Container = styled.div`
     font-family: Arial, sans-serif;
     line-height: 1.6;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
   }
 
   .info-details p {
@@ -852,10 +818,9 @@ const Container = styled.div`
 
   .manage-account-button {
     display: block; /* Makes the button a block element */
-    background-color: #2f2f2f;
+    background-color: #1DB954;
     color: white; /* Text color */
     padding: 10px 20px;
-    border: 0.1px solid white;
     border-radius: 20px; /* Rounded corners */
     font-size: 16px; /* Font size */
     font-family: Arial, sans-serif;
@@ -980,7 +945,7 @@ const Container = styled.div`
   }
 
   button[type="submit"] {
-    background-color: #007bff;
+    background-color: #1DB954;
     color: white;
   }
 

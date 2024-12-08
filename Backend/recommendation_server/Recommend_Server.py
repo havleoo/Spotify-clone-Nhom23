@@ -1,38 +1,75 @@
-from flask import Flask, jsonify, request
-import pandas as pd
-from spotipy.oauth2 import SpotifyClientCredentials
-import spotipy
-from Recommend_method import recommend_songs, recommend_songs_listened
+import os
+import requests
+from bs4 import BeautifulSoup
+import re
+from flask import Flask, jsonify
 from flask_cors import CORS
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-# Setup Spotify API
-cid = "5ce22bf9a89040eb895942284fe06912"
-secret = "28251d136c45461e88942dd633250ae4"
-client_credentials_manager = SpotifyClientCredentials(client_id=cid, client_secret=secret)
-sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+# URL of the Spotify Daily Charts (Vietnam)
+url = "https://kworb.net/spotify/country/vn_daily.html"
 
-# Load playlist songs data
-df_songs = pd.read_csv('Top_songs_2018-Now.csv')
+# Scrape data from the webpage
+response = requests.get(url)
+response.encoding = 'utf-8'  # Ensure correct decoding
+if response.status_code != 200:
+    print(f"Failed to retrieve page. Status code: {response.status_code}")
+    data = []
+else:
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'html.parser')
 
-@app.route('/api/recommendations', methods=['POST'])
-def get_recommendations():
-    data = request.json
-    song_id = data.get('song_id')
-    num_recommendations = data.get('num_recommendations', 5)  # Default to 5 recommendations
+    # Extract table data
+    table = soup.find('table')
+    data = []  # To store song data
+    if table:
+        num_order = 1
+        for row in table.find_all('tr')[1:]:  # Skip header row
+            columns = row.find_all('td')
+            if len(columns) >= 7:
+                try:
+                    name_artist = columns[2].text.strip()
+                    if " - " not in name_artist:
+                        continue
 
-    recommended_song_ids = recommend_songs(song_id, sp, df_songs, num_recommendations)
-    return jsonify(recommended_song_ids)
+                    match = re.match(r"(.+) - (.+)", name_artist)
+                    if match:
+                        artist, name = match.groups()
+                        artist, name = artist.strip(), name.strip()
 
-@app.route('/api/recommendations_listened', methods=['GET'])
-def get_recommendations_listened():
-    token = request.headers.get('Authorization').split(' ')[1]  # Extract the token from the Authorization header
-    num_recommendations = request.args.get('num_recommendations', 5, type=int)  # Default to 5 recommendations
+                        link_tags = columns[2].find_all('a')
+                        if len(link_tags) < 2:
+                            continue
+                        track_url = link_tags[1]['href']
+                        track_id = track_url.split('/')[-1].split('.')[0]  # Extract track ID
 
-    recommended_song_ids = recommend_songs_listened(sp, df_songs, token, num_recommendations)
-    return jsonify(recommended_song_ids)
+                        data.append((num_order, name, artist, track_id))
+                        num_order += 1
+                except Exception as e:
+                    print(f"Error: {e} - Skipping row.")
 
+# Define Flask route for API
+@app.route('/api/songs', methods=['GET'])
+def get_songs():
+    # Return only the first 100 songs
+    songs_list = data[:100]
+    formatted_songs = [{'Order': song[0], 'Name': song[1], 'Artist': song[2], 'ID': song[3]} for song in songs_list]
+    return jsonify(formatted_songs)
+
+# Entry point for Gunicorn
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Render dynamically sets the port; default to 5000 for local testing
+    port = int(os.getenv('PORT', 5000))
+    host = '0.0.0.0'
+
+    # Provide log information based on the environment
+    render_url = os.getenv('RENDER_EXTERNAL_HOSTNAME')  # Render provides this environment variable
+    if render_url:
+        print(f"Server is running on: https://{render_url}/api/songs")
+    else:
+        print(f"Server is running on: http://127.0.0.1:{port}/api/songs")
+    
+    app.run(host=host, port=port)

@@ -6,6 +6,7 @@ import { reducerCases } from "../utils/Constants";
 
 export default function Sidebar() {
   const [showCreateInput, setShowCreateInput] = useState(false); // Trạng thái để hiển thị input
+  const [showPlaylists, setShowPlaylists] = useState(true); // Trạng thái để ẩn/hiện Playlists
   const [, dispatch] = useStateProvider();
 
   const handleHomeClick = () => {
@@ -15,6 +16,17 @@ export default function Sidebar() {
   // Hàm này sẽ truyền xuống component Playlist để ẩn input sau khi tạo playlist
   const handleCreatePlaylistSuccess = () => {
     setShowCreateInput(false);
+  };
+
+  // Hàm để toggle hiển thị playlist khi nhấn vào "Your Library"
+  const togglePlaylistsVisibility = () => {
+    setShowPlaylists(!showPlaylists);
+  };
+
+  // Prevent click on the "+" button from triggering the playlist toggle
+  const handleButtonClick = (e) => {
+    e.stopPropagation(); // Prevents click event from bubbling up to the "Your Library" title
+    setShowCreateInput(!showCreateInput); // Keep the original "+" button functionality
   };
 
   return (
@@ -30,19 +42,17 @@ export default function Sidebar() {
           <li onClick={handleHomeClick}>
             <span>Home</span>
           </li>
-          <li>
-            <span>Search</span>
-          </li>
-          <li className="library">
+            <li className="library" onClick={togglePlaylistsVisibility}>
             <span>Your Library</span>
-            <button onClick={() => setShowCreateInput(!showCreateInput)}>
-              +
+            <button className="button" onClick={handleButtonClick}>
+              {showCreateInput ? "-" : "+"}
             </button>
           </li>
         </ul>
       </div>
-      {/* Truyền prop handleCreatePlaylistSuccess */}
-      <Playlists showCreateInput={showCreateInput} onCreateSuccess={handleCreatePlaylistSuccess} />
+      {showPlaylists && (
+        <Playlists showCreateInput={showCreateInput} onCreateSuccess={handleCreatePlaylistSuccess} />
+      )}
     </Container>
   );
 }
@@ -61,10 +71,10 @@ const Container = styled.div`
       text-align: center;
       margin: 1rem 0;
       img {
-        max-width: 80%; 
-        height: auto; 
-        object-fit: contain; 
-        margin: 0 auto; 
+        max-width: 80%;
+        height: auto;
+        object-fit: contain;
+        margin: 0 auto;
       }
     }
     ul {
@@ -75,7 +85,7 @@ const Container = styled.div`
       padding: 1rem;
       li {
         display: flex;
-        justify-content: space-between; /* Để tạo khoảng cách giữa tên và nút */
+        justify-content: space-between;
         align-items: center;
         gap: 1rem;
         cursor: pointer;
@@ -85,20 +95,20 @@ const Container = styled.div`
         }
         .library {
           position: relative;
-          button {
-            background-color: #1db954;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            border-radius: 50%;
-            padding: 0.2rem 0.5rem;
-            &:hover {
-              background-color: #1ed760;
-            }
-          }
         }
       }
+    }
+  }
+
+  .button {
+    background-color: transparent;
+    color: grey;
+    border: none;
+    padding: 0.5rem 0rem;
+    cursor: pointer;
+    font-size: 2rem;
+    &:hover {
+      color: white;
     }
   }
 `;
