@@ -29,6 +29,10 @@ export default function Login() {
             const data = await response.json();
 
             if (response.ok) {
+
+                // Save user Id in localStorage
+                localStorage.setItem("userId", data.user._id);
+
                 // Redirect to Spotify auth page after successful registration/login
                 handleSpotifyAuth();
             } else {
@@ -43,10 +47,11 @@ export default function Login() {
     };
 
     const handleSpotifyAuth = () => {
-        const client_id = "68a6bb1c058249dc82938cb2f602cea4";
+        const client_id = "4353ed52ef66416193e5490b48292603";
         const redirect_uri = "http://localhost:3000/";
         const api_uri = "https://accounts.spotify.com/authorize";
         const scope = [
+            "streaming",
             "user-read-email",
             "user-read-private",
             "user-modify-playback-state",

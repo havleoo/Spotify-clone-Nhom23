@@ -1,5 +1,6 @@
 // controllers/UserController.js
 const UserModel = require("../models/User");
+const userService = require('../services/UserService');
 
 // Register a new user
 exports.registerUser = async (req, res) => {
@@ -15,7 +16,14 @@ exports.registerUser = async (req, res) => {
         // Create a new user without hashing the password
         const newUser = new UserModel({ username, password });
         await newUser.save();
-        res.status(201).json({ message: "User registered successfully." });
+        res.status(201).json({ 
+            message: "User registered successfully." , 
+            user: {
+                _id: newUser._id, 
+                username: newUser.username, 
+                password: newUser.password
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: "Registration failed. Please try again." });
     }
@@ -37,7 +45,14 @@ exports.loginUser = async (req, res) => {
             return res.status(401).json({ error: "Invalid password." });
         }
 
-        res.status(200).json({ message: "Login successful." });
+        res.status(200).json({ 
+            message: "Login successful." , 
+            user: {
+                _id: user._id, 
+                username: user.username, 
+                password: user.password
+            }
+        });
     } catch (error) {
         res.status(500).json({ error: "Login failed. Please try again." });
     }
@@ -66,5 +81,21 @@ exports.changePassword = async (req, res) => {
         res.status(200).json({ message: "Password changed successfully." });
     } catch (error) {
         res.status(500).json({ error: "Password change failed. Please try again." });
+    }
+};
+
+// Get User
+exports.getUser = async (req, res) => {
+    const userId = req.params.id;
+    try {
+        // Find the user by username
+        const user = await userService.getUser( userId );
+        if (!user) {
+            return res.status(404).json({ error: "User not found." });
+        }
+        return res.status(200).json(user)
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 };
