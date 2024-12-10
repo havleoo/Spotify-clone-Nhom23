@@ -3,8 +3,6 @@ import styled from "styled-components";
 import Playlists from "./Playlists";
 import { useStateProvider } from "../utils/StateProvider";
 import { reducerCases } from "../utils/Constants";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 export default function Sidebar() {
   const [showCreateInput, setShowCreateInput] = useState(false); // Trạng thái để hiển thị input
@@ -32,10 +30,13 @@ export default function Sidebar() {
           <li onClick={handleHomeClick}>
             <span>Home</span>
           </li>
+          <li>
+            <span>Search</span>
+          </li>
           <li className="library">
             <span>Your Library</span>
             <button onClick={() => setShowCreateInput(!showCreateInput)}>
-              <FontAwesomeIcon icon={faPlus}/>
+              +
             </button>
           </li>
         </ul>
