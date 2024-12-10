@@ -262,6 +262,11 @@ export default function Navbar({ navBackground }) {
   return (
     <Container navBackground={navBackground}>
       <div className="search__bar" ref={searchBarRef}>
+        <input
+        type="text"
+        style={{ display: "none" }}
+        autoComplete="username" // Attract autofill to this hidden input
+        />
         <FaSearch />
         <input
           type="text"
@@ -269,7 +274,8 @@ export default function Navbar({ navBackground }) {
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
-          autocomplete="off"
+          autoComplete="off"
+          name="search-song"
         />
         {showSuggestions && searchQuery && (
           <ul className="suggestions">
@@ -336,7 +342,7 @@ export default function Navbar({ navBackground }) {
                       }}
                     ></div>
                   ) : (
-                    <div className="circle placeholder">
+                    <div className="circle_placeholder">
                       <span>No image</span>
                     </div>
                   )}
@@ -551,7 +557,6 @@ const Container = styled.div`
       }
     }
   }
-
   .avatar-button {
     display: flex;
     align-items: center;
@@ -911,7 +916,20 @@ const Container = styled.div`
     font-size: 14px;
     background-color: #f0f0f0;
   }
-
+  .circle_placeholder{
+    display: flex;
+    text-align: center;
+    font-size: 12px;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    color: #888;
+    background-color: #f0f0f0;
+  }
+    
   .circle-popup {
     width: 70px;
     height: 70px;
