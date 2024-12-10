@@ -123,6 +123,9 @@ export default function Navbar({ navBackground }) {
         password: newPassword,
       }));
 
+      // Clear search bar value
+      setSearchQuery("");
+
       setErrorMessage(null);
       alert("Account details updated successfully!");
     } catch (error) {
