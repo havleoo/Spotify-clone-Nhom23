@@ -45,30 +45,25 @@ const upload = multer(
 app.post('/single', upload.single("image"), async (req, res) => {
     try {
         const { path, filename } = req.file;
-        const userId = req.body.userId;
-        if (!userId) {
-            return res.status(400).send({ error: 'userId is required' });
-        }
-        const image = await Image({userId, path, filename})
+        const image = await Image({path, filename})
         await image.save();
         res.send({"msg": "Image Uploaded", "id": image._id})
     } catch (error){
         res.send({"error": "Unable to upload image"})
     }
     console.log(req.file);
-    console.log(req.body.userId);
 })
 
-app.get("/img/:userId/:id", async (req, res) => {
-    const {id, userId} = req.params
+app.get("/img/:id", async (req, res) => {
+    const {id} = req.params
     try {
-        const image = await Image.findOne({_id: id, userId: userId });
+        const image = await Image.findById(id)
         if(!image) res.send({"msg": "Image not found"})
 
         const imagePath = path.join(__dirname, "uploads", image.filename)
         res.sendFile(imagePath)
     } catch (error) {
-        res.send({"error": error.message})
+        res.send({"error": "unable to save image"})
     }
 })
 

@@ -38,7 +38,6 @@ export default function Spotify() {
         userId: data.id,
         userUrl: data.external_urls.spotify,
         name: data.display_name,
-        email: data.email,
       };
       dispatch({ type: reducerCases.SET_USER, userInfo });
     };

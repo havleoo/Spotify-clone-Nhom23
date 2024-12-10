@@ -57,16 +57,7 @@ export default function Navbar({ navBackground }) {
         return;
     }
 
-    // Get userId from localStorage (or another state management method)
-    const userId = localStorage.getItem("userId");
-
     formData.append("image", imageFile);
-    formData.append("userId", userId)
-
-    if (!userId) {
-      alert("User not authenticated. Please log in.");
-      return;
-    }
 
     try {
         const response = await fetch("http://localhost:3001/single", {
@@ -79,8 +70,7 @@ export default function Navbar({ navBackground }) {
         if (result.msg === "Image Uploaded") {
             const newImageUrl = result.id; // Assuming backend returns imageId
             localStorage.setItem("imgUrl", newImageUrl); // Store imageId locally
-            // Update the imgUrl state for image display
-            setImgUrl(`http://localhost:3001/img/${userId}/${newImageUrl}`);
+            setImgUrl(`http://localhost:3001/img/${newImageUrl}`); // Cập nhật URL ảnh hiển thị
             alert("Image uploaded successfully:", newImageUrl);
         } else {
             alert("Failed to upload image.");
@@ -147,17 +137,17 @@ export default function Navbar({ navBackground }) {
   useEffect(() => {
 
     const storedImageUrl = localStorage.getItem("imgUrl");
-    const userId = localStorage.getItem("userId");
-      if (storedImageUrl && userId) {
-        fetch(`http://localhost:3001/img/${userId}/${storedImageUrl}`)
+      if (storedImageUrl) {
+        fetch(`http://localhost:3001/img/${storedImageUrl}`)
           .then((response) => {
             if (response.ok) {
-              setImgUrl(`http://localhost:3001/img/${userId}/${storedImageUrl}`);
+              setImgUrl(`http://localhost:3001/img/${storedImageUrl}`);
             }
           })
                 .catch((error) => console.error("Error loading image:", error));
     }
 
+    const userId = localStorage.getItem("userId");
     const fetchUser = async () => {
       const response = await axios.get(
         `http://localhost:3001/api/users/${userId}`
@@ -275,7 +265,6 @@ export default function Navbar({ navBackground }) {
         <FaSearch />
         <input
           type="text"
-          name="customSearchField"
           placeholder="Search for a song"
           value={searchQuery}
           onChange={handleInputChange}
@@ -335,6 +324,7 @@ export default function Navbar({ navBackground }) {
           <div className="user-info-popup" ref={userInfoRef}>
             <div className="user-info-header">
               <div className="user-details">
+
                 <div className="image-container">
                   {imgUrl ? (
                     <div
@@ -346,7 +336,8 @@ export default function Navbar({ navBackground }) {
                       }}
                     ></div>
                   ) : (
-                    <div className="circle-placeholder">
+                    <div className="circle placeholder">
+                      <span>No image</span>
                     </div>
                   )}
                 </div>
@@ -395,6 +386,7 @@ export default function Navbar({ navBackground }) {
                             ></div>
                           ) : (
                             <div className="circle placeholder">
+                              <span>No image</span>
                             </div>
                           )}
                         </div>
@@ -408,7 +400,6 @@ export default function Navbar({ navBackground }) {
                             className="removeButton"
                             onClick={() => {
                               setImgUrl(null);
-                              localStorage.setItem("imgUrl", "")
                             }}
                           >
                             Remove photo
@@ -934,13 +925,6 @@ const Container = styled.div`
     font-size: 14px;
     background-color: #f0f0f0;
   }
-
-   .circle-placeholder {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    border: 2px solid #ddd;
-   }
 
   .placeholder {
     background-color: #f8f9fa;
