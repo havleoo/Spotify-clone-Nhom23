@@ -7,11 +7,16 @@ import { useStateProvider } from "../utils/StateProvider";
 import Body from "./Body";
 
 import { reducerCases } from "../utils/Constants";
+import Footer from "./Footer";
 
 export default function Spotify() {
   const [{ token }, dispatch] = useStateProvider();
   const [navBackground, setNavBackground] = useState(false);
   const [headerBackground, setHeaderBackground] = useState(false);
+  const [spotifyBodyBackground, setSpotifyBodyBackground] = useState(
+    "rgb(32, 87, 100)" // Default gradient
+  );
+
   const bodyRef = useRef();
   const bodyScrolled = () => {
     bodyRef.current.scrollTop >= 30
@@ -37,6 +42,13 @@ export default function Spotify() {
       dispatch({ type: reducerCases.SET_USER, userInfo });
     };
     getUserInfo();
+
+    // Load background color from localStorage or use default
+    const savedBackground = localStorage.getItem("backgroundColor");
+    setSpotifyBodyBackground(
+      savedBackground || "rgb(32, 87, 100)"
+    );
+
   }, [dispatch, token]);
   useEffect(() => {
     const getPlaybackState = async () => {
@@ -54,7 +66,7 @@ export default function Spotify() {
     getPlaybackState();
   }, [dispatch, token]);
   return (
-    <Container>
+    <Container spotifyBodyBackground={spotifyBodyBackground}>
       <div className="spotify__body">
         <Sidebar />
         <div className="body" ref={bodyRef} onScroll={bodyScrolled}>
@@ -65,6 +77,7 @@ export default function Spotify() {
         </div>
       </div>
       <div className="spotify__footer">
+        <Footer />
       </div>
     </Container>
   );
@@ -82,7 +95,8 @@ const Container = styled.div`
     height: 100%;
     width: 100%;
     background: linear-gradient(transparent, rgba(0, 0, 0, 1));
-    background-color: rgb(32, 87, 100);
+    background-color: ${({ spotifyBodyBackground }) =>
+      spotifyBodyBackground || "rgb(32, 87, 100)"};
     .body {
       height: 100%;
       width: 100%;
@@ -95,5 +109,11 @@ const Container = styled.div`
         }
       }
     }
+  }
+
+  .spotify__footer {
+    height: 100px;
+    width: 100%;
+    background-color: #282828;
   }
 `;

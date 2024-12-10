@@ -1,6 +1,6 @@
 // routes/UserRoutes.js
 const express = require("express");
-const { registerUser, loginUser, changePassword } = require("../controllers/UserController");
+const { registerUser, loginUser, changePassword, getUser } = require("../controllers/UserController");
 
 const router = express.Router();
 
@@ -12,5 +12,8 @@ router.post("/login", loginUser);
 
 // Change password route
 router.post("/change-password", changePassword);
+
+// Get User
+router.get("/:id", getUser);
 
 module.exports = router;
