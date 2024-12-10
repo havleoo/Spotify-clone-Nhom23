@@ -474,6 +474,8 @@ export default function Navbar({ navBackground }) {
                             setNewPassword("")
                             setConfirmNewPassword("")
                             handleSaveChanges();
+                          } else {
+                            setSearchQuery("")
                           }
                           setIsEditing(!isEditing); // Toggle edit mode
                           
