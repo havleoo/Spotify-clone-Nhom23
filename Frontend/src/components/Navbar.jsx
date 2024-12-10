@@ -5,7 +5,6 @@ import { reducerCases } from "../utils/Constants";
 import { CgProfile } from "react-icons/cg";
 import { useStateProvider } from "../utils/StateProvider";
 import { FiLogOut } from "react-icons/fi";
-import { PiUserSwitch } from "react-icons/pi";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaRegUserCircle } from "react-icons/fa";
 import { FaRegEyeSlash } from "react-icons/fa";
@@ -30,6 +29,13 @@ export default function Navbar({ navBackground }) {
   const [isSettingOpen, setIsSettingOpen] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchBarRef = useRef(null);
+  const userInfoRef = useRef(null);
+
+  const handleUserInfoClick = (event) => {
+    if(userInfoRef.current && !userInfoRef.current.contains(event.target)) {
+      setShowInfo(false)
+    }
+  }
 
   const handleSearchBarClick = (event) => {
     if (searchBarRef.current && !searchBarRef.current.contains(event.target)) {
@@ -51,7 +57,16 @@ export default function Navbar({ navBackground }) {
         return;
     }
 
+    // Get userId from localStorage (or another state management method)
+    const userId = localStorage.getItem("userId");
+
     formData.append("image", imageFile);
+    formData.append("userId", userId)
+
+    if (!userId) {
+      alert("User not authenticated. Please log in.");
+      return;
+    }
 
     try {
         const response = await fetch("http://localhost:3001/single", {
@@ -64,7 +79,8 @@ export default function Navbar({ navBackground }) {
         if (result.msg === "Image Uploaded") {
             const newImageUrl = result.id; // Assuming backend returns imageId
             localStorage.setItem("imgUrl", newImageUrl); // Store imageId locally
-            setImgUrl(`http://localhost:3001/img/${newImageUrl}`); // Cập nhật URL ảnh hiển thị
+            // Update the imgUrl state for image display
+            setImgUrl(`http://localhost:3001/img/${userId}/${newImageUrl}`);
             alert("Image uploaded successfully:", newImageUrl);
         } else {
             alert("Failed to upload image.");
@@ -131,17 +147,17 @@ export default function Navbar({ navBackground }) {
   useEffect(() => {
 
     const storedImageUrl = localStorage.getItem("imgUrl");
-      if (storedImageUrl) {
-        fetch(`http://localhost:3001/img/${storedImageUrl}`)
+    const userId = localStorage.getItem("userId");
+      if (storedImageUrl && userId) {
+        fetch(`http://localhost:3001/img/${userId}/${storedImageUrl}`)
           .then((response) => {
             if (response.ok) {
-              setImgUrl(`http://localhost:3001/img/${storedImageUrl}`);
+              setImgUrl(`http://localhost:3001/img/${userId}/${storedImageUrl}`);
             }
           })
                 .catch((error) => console.error("Error loading image:", error));
     }
 
-    const userId = localStorage.getItem("userId");
     const fetchUser = async () => {
       const response = await axios.get(
         `http://localhost:3001/api/users/${userId}`
@@ -158,6 +174,14 @@ export default function Navbar({ navBackground }) {
 
   }, []);
 
+  useEffect(() => {
+    document.addEventListener("mousedown", handleUserInfoClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleUserInfoClick);
+    };
+  }, []);
+
   const handleToggle = () => {
     setShowInfo((prevShowInfo) => !prevShowInfo);
   };
@@ -172,7 +196,7 @@ export default function Navbar({ navBackground }) {
       const response = await axios.get(
         `https://api.spotify.com/v1/search?q=${encodeURIComponent(
           query
-        )}&type=track%2Calbum%2Cartist&market=VN&limit=5`,
+        )}&type=track&market=VN&limit=5`,
         {
           headers: {
             Authorization: "Bearer " + token,
@@ -192,30 +216,8 @@ export default function Navbar({ navBackground }) {
         type: "track",
       }));
 
-      const albumSuggestions = items.albums.items.slice(0, 2).map((album) => ({
-        id: album.id,
-        name: album.name,
-        artists: album.artists.map((artist) => artist.name),
-        image: album.images[2]?.url || "",
-        context_uri: album.uri,
-        type: "album",
-        external_urls: album.external_urls,
-      }));
-
-      const artistSuggestions = items.artists.items
-        .slice(0, 2)
-        .map((artist) => ({
-          id: artist.id,
-          name: artist.name,
-          image: artist.images[2]?.url || "",
-          type: "artist",
-          external_urls: artist.external_urls,
-        }));
-
       setSuggestions([
         ...trackSuggestions,
-        ...albumSuggestions,
-        ...artistSuggestions,
       ]);
     } catch (error) {
       console.error("Error fetching: ", error);
@@ -266,9 +268,6 @@ export default function Navbar({ navBackground }) {
     }
   };
 
-  const openExternalLink = (externalUrl) => {
-    window.open(externalUrl, "_blank"); // Open link in a new tab
-  };
 
   return (
     <Container navBackground={navBackground}>
@@ -276,10 +275,12 @@ export default function Navbar({ navBackground }) {
         <FaSearch />
         <input
           type="text"
-          placeholder="Tracks, albums, or artists"
+          name="customSearchField"
+          placeholder="Search for a song"
           value={searchQuery}
           onChange={handleInputChange}
           onFocus={() => setShowSuggestions(true)}
+          autocomplete="off"
         />
         {showSuggestions && searchQuery && (
           <ul className="suggestions">
@@ -287,12 +288,19 @@ export default function Navbar({ navBackground }) {
               <li
                 key={index}
                 onClick={() => {
-                  if (
-                    suggestion.type === "artist" ||
-                    suggestion.type === "album"
-                  ) {
-                    openExternalLink(suggestion.external_urls.spotify); // Open Spotify link for artist or album
-                  } else {
+                    const id = suggestion.id;
+                    const name = suggestion.name;
+                    const image = suggestion.image;
+                    const artists = suggestion.artist;
+                    const duration = suggestion.duration;
+                    const album = suggestion.album;
+                    const context_uri = suggestion.context_uri;
+                    const track_number = suggestion.track_number;
+                    const uri = suggestion.uri;
+
+                    const selectedTrack = {id, name, artists, image, duration, album, context_uri, track_number, uri}
+                    dispatch({ type: reducerCases.SET_SELECTED_TRACK, selectedTrack });     
+
                     playTrack(
                       suggestion.id,
                       suggestion.name,
@@ -301,7 +309,6 @@ export default function Navbar({ navBackground }) {
                       suggestion.context_uri,
                       suggestion.track_number
                     );
-                  }
                 }}
               >
                 {suggestion.image && (
@@ -325,10 +332,9 @@ export default function Navbar({ navBackground }) {
         </button>
 
         {showInfo && (
-          <div className="user-info-popup">
+          <div className="user-info-popup" ref={userInfoRef}>
             <div className="user-info-header">
               <div className="user-details">
-
                 <div className="image-container">
                   {imgUrl ? (
                     <div
@@ -340,22 +346,20 @@ export default function Navbar({ navBackground }) {
                       }}
                     ></div>
                   ) : (
-                    <div className="circle placeholder">
-                      <span>Chưa có ảnh</span>
+                    <div className="circle-placeholder">
                     </div>
                   )}
                 </div>
 
                 <div className="user-text">
-                  <p className="user-profile-name">{userInfo?.name}</p>
-                  <p className="user-profile-url">
+                  <p className="user-profile-name">
                     <a
                       href={userInfo?.userUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="profile-link"
                     >
-                      {userInfo?.userUrl}
+                      {userInfo?.name}
                     </a>
                   </p>
                 </div>
@@ -391,7 +395,6 @@ export default function Navbar({ navBackground }) {
                             ></div>
                           ) : (
                             <div className="circle placeholder">
-                              <span>Chưa có ảnh</span>
                             </div>
                           )}
                         </div>
@@ -405,6 +408,7 @@ export default function Navbar({ navBackground }) {
                             className="removeButton"
                             onClick={() => {
                               setImgUrl(null);
+                              localStorage.setItem("imgUrl", "")
                             }}
                           >
                             Remove photo
@@ -421,6 +425,7 @@ export default function Navbar({ navBackground }) {
                               type="password"
                               value={oldPassword}
                               onChange={(e) => setOldPassword(e.target.value)}
+                              autocomplete="off"
                             />
                           </div>
                           <div className="editable-field">
@@ -429,6 +434,7 @@ export default function Navbar({ navBackground }) {
                                 type={showPassword ? "text" : "password"}
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
+                                autocomplete="off"
                               />
                               <button
                                 onClick={() => setShowPassword(!showPassword)}
@@ -443,6 +449,7 @@ export default function Navbar({ navBackground }) {
                               type={showPassword ? "text" : "password"}
                               value={confirmNewPassword}
                               onChange={(e) => setConfirmNewPassword(e.target.value)}
+                              autocomplete="off"
                             />
                           </div>
                         </div>
@@ -457,7 +464,6 @@ export default function Navbar({ navBackground }) {
                               onClick={() => setShowPassword(!showPassword)}
                               className="password-icon"
                             >
-                              {showPassword ? <FaRegEyeSlash /> : <IoEyeOutline />}
                             </button>
                           </div>
                           <p className="email-text">Gmail Account: {userInfo?.email}</p>
@@ -470,22 +476,22 @@ export default function Navbar({ navBackground }) {
                         onClick={() => {
                           if (isEditing) {
                             // Save changes when exiting edit mode
+                            setOldPassword("");
+                            setNewPassword("")
+                            setConfirmNewPassword("")
                             handleSaveChanges();
                           }
                           setIsEditing(!isEditing); // Toggle edit mode
+                          
                         }}
                       >
-                        {isEditing ? "Save Changes" : "Manage Account"}
+                        {isEditing ? "Save Changes" : "Change password"}
                       </button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
-
-            <button className="switch-user-button">
-              <PiUserSwitch className="switch-icon" /> Switch User
-            </button>
 
             <div>
               <button className="settings-button" onClick={() => setIsSettingOpen(true)}>
@@ -777,7 +783,7 @@ const Container = styled.div`
     opacity: 1;
     padding: 20px;
     border-radius: 12px;
-    width: 400px;
+    width: 500px;
     max-width: 80%;
     height: 500px;
     text-align: left;
@@ -796,7 +802,7 @@ const Container = styled.div`
     font-family: Arial, sans-serif;
     line-height: 1.6;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
   }
 
   .info-details p {
@@ -821,10 +827,9 @@ const Container = styled.div`
 
   .manage-account-button {
     display: block; /* Makes the button a block element */
-    background-color: #2f2f2f;
+    background-color: #1DB954;
     color: white; /* Text color */
     padding: 10px 20px;
-    border: 0.1px solid white;
     border-radius: 20px; /* Rounded corners */
     font-size: 16px; /* Font size */
     font-family: Arial, sans-serif;
@@ -930,6 +935,13 @@ const Container = styled.div`
     background-color: #f0f0f0;
   }
 
+   .circle-placeholder {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+   }
+
   .placeholder {
     background-color: #f8f9fa;
   }
@@ -949,7 +961,7 @@ const Container = styled.div`
   }
 
   button[type="submit"] {
-    background-color: #007bff;
+    background-color: #1DB954;
     color: white;
   }
 
